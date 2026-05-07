@@ -42,11 +42,26 @@ Quando confirmar horário, inclua ao final:
 
 const conversas = new Map();
 
+function delay(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 function getMensagem(data) {
   if (data?.message?.conversation) return { texto: data.message.conversation, temFoto: false };
   if (data?.message?.imageMessage) return { texto: "[lead enviou uma foto de referência de sorriso]", temFoto: true };
   if (data?.message?.extendedTextMessage?.text) return { texto: data.message.extendedTextMessage.text, temFoto: false };
   return null;
+}
+
+async function enviarTyping(numero) {
+  await fetch(
+    `${process.env.EVOLUTION_URL}/chat/sendPresence/${process.env.EVOLUTION_INSTANCE}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json", apikey: process.env.EVOLUTION_API_KEY },
+      body: JSON.stringify({ number: numero, presence: "composing", delay: 3000 })
+    }
+  );
 }
 
 async function responderClaude(numero, nome, mensagem) {
@@ -109,6 +124,9 @@ app.post("/webhook", async (req, res) => {
 
     const numero = data.key.remoteJid.replace("@s.whatsapp.net", "");
     const nome = data.pushName || null;
+
+    await enviarTyping(numero);
+    await delay(3000);
 
     const resposta = await responderClaude(numero, nome, msg.texto);
 
