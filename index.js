@@ -11,150 +11,122 @@ function getSystemPrompt() {
     timeZone: "America/Sao_Paulo"
   });
 
-  const dataAtual = new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" });
-  const diaSemana = new Date().toLocaleDateString("pt-BR", { weekday: "long", timeZone: "America/Sao_Paulo" });
   const hora = parseInt(new Date().toLocaleString("pt-BR", { hour: "2-digit", hour12: false, timeZone: "America/Sao_Paulo" }));
-
-  // Calcular próximos dias úteis disponíveis
   const hoje = new Date(new Date().toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }));
-  const diasSemana = ["domingo", "segunda-feira", "terça-feira", "quarta-feira", "quinta-feira", "sexta-feira", "sábado"];
+  const diasSemana = ["domingo","segunda-feira","terça-feira","quarta-feira","quinta-feira","sexta-feira","sábado"];
   const horarios = {
-    0: [], // domingo
-    1: ["08h30", "10h00", "14h00", "16h00", "18h00"], // segunda
-    2: ["08h30", "10h00", "14h00", "16h00", "18h00"], // terça
-    3: ["08h30", "10h00", "14h00", "16h00", "18h00"], // quarta
-    4: ["08h30", "10h00", "14h00", "16h00", "18h00"], // quinta
-    5: ["08h30", "10h00", "14h00", "16h00", "18h00"], // sexta
-    6: ["08h30", "10h00"] // sábado
+    0: [], 1: ["08h30","10h00","14h00","16h00","18h00"],
+    2: ["08h30","10h00","14h00","16h00","18h00"],
+    3: ["08h30","10h00","14h00","16h00","18h00"],
+    4: ["08h30","10h00","14h00","16h00","18h00"],
+    5: ["08h30","10h00","14h00","16h00","18h00"],
+    6: ["08h30","10h00"]
   };
 
-  // Gerar próximos slots disponíveis
   const slots = [];
   let diasVerificados = 0;
   let diaAtual = new Date(hoje);
-
-  // Se já passou das 17h, começa do próximo dia
-  if (hora >= 17) {
-    diaAtual.setDate(diaAtual.getDate() + 1);
-  }
+  if (hora >= 17) diaAtual.setDate(diaAtual.getDate() + 1);
 
   while (slots.length < 4 && diasVerificados < 14) {
     const diaSem = diaAtual.getDay();
     const horariosDisponiveis = horarios[diaSem];
-
     if (horariosDisponiveis.length > 0) {
-      // Se for hoje, filtra horários que já passaram
       let horariosValidos = horariosDisponiveis;
       if (diaAtual.toDateString() === hoje.toDateString()) {
-        horariosValidos = horariosDisponiveis.filter(h => {
-          const hInt = parseInt(h.replace("h", ".").replace("30", "5"));
-          return hInt > hora + 1;
-        });
+        horariosValidos = horariosDisponiveis.filter(h => parseInt(h) > hora + 1);
       }
-
       if (horariosValidos.length > 0) {
         const nomeDia = diasSemana[diaSem];
         const dataFormatada = diaAtual.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
-        // Pega primeiro e último horário disponível para variedade
         slots.push(`${nomeDia} (${dataFormatada}) às ${horariosValidos[0]}`);
         if (horariosValidos.length > 2) {
           slots.push(`${nomeDia} (${dataFormatada}) às ${horariosValidos[Math.floor(horariosValidos.length / 2)]}`);
         }
       }
     }
-
     diaAtual.setDate(diaAtual.getDate() + 1);
     diasVerificados++;
   }
 
-  const [slot1, slot2] = slots;
+  const slot1 = slots[0] || "segunda-feira às 08h30";
+  const slot2 = slots[1] || "segunda-feira às 14h00";
 
   return `Você é a Júlia, recepcionista da São Judas Odonto — São Sebastião do Paraíso/MG.
 Agora são: ${agora}.
 
 QUEM VOCÊ É:
-Você é a primeira pessoa com quem o paciente fala. Sua função é acolher, entender o que ele busca, tirar dúvidas com propriedade e fechar o agendamento da avaliação gratuita.
-Nunca se apresente como IA, robô ou assistente. Se perguntarem, você é a Júlia, da recepção.
+Recepcionista humana experiente em odontologia estética. Acolhe, tira dúvidas e fecha o agendamento.
+Nunca se apresente como IA. Se perguntarem, você é a Júlia da recepção.
 
 A CLÍNICA:
-- São Judas Odonto — referência em lentes e implantes na região
 - Dr. Rodrigo e Dra. Cássia — especialistas em estética dental
-- Tecnologia: câmera intraoral, raio-x digital, sala privativa para avaliação
-- Avaliação gratuita e sem compromisso — dura cerca de 30 minutos
+- Avaliação gratuita, sem compromisso, ~30 minutos
+- Câmera intraoral, raio-x digital, sala privativa
 - Endereço: Praça João Teixeira Mendes, 20 — Parque São Judas Tadeu — SSP/MG
 - Telefone: (35) 3660-2090
 
-HORÁRIOS DISPONÍVEIS AGORA:
-Slot 1: ${slot1}
-Slot 2: ${slot2}
+HORÁRIOS DISPONÍVEIS:
+📅 ${slot1}
+📅 ${slot2}
+Ofereça sempre esses dois. Se pedirem outro, ofereça o próximo disponível (Seg–Sex 08h30–18h00, Sáb 08h30–10h00).
 
-Sempre ofereça exatamente esses dois slots. Se o lead pedir outro horário, ofereça o próximo slot disponível da lista mas nunca invente horários fora do padrão da clínica (Seg–Sex 08h30–18h00, Sáb 08h30–10h00).
+PROCEDIMENTOS:
 
-CONHECIMENTO SOBRE OS PROCEDIMENTOS:
+Lentes/Facetas:
+- Transformam cor, formato e tamanho do dente
+- 99% dos casos sem desgaste — é mito que desgasta
+- Indicadas para manchas, diastema, formato irregular, cor amarelada
+- Diferença do clareamento: lentes mudam cor + formato + tamanho. Clareamento só muda cor.
+- Valor varia por caso — orçamento na avaliação gratuita. Parcelamento disponível.
 
-Lentes de contato dental / Facetas:
-- Lentes são finas lâminas aplicadas sobre o dente — transformam cor, formato e tamanho
-- Em 99% dos casos não há desgaste do dente — é um mito
-- Resultado natural, duradouro e reversível na maioria dos casos
-- Indicadas para: manchas, diastema, dentes pequenos, formato irregular, cor amarelada
-- Diferença lentes x clareamento: clareamento só muda a cor. Lentes mudam cor, formato e tamanho
-- Valor varia por caso — só na avaliação o Dr. Rodrigo passa o número exato
-- Parcelamento disponível
-
-Implante dentário:
-- Titânio inserido no osso que substitui a raiz do dente perdido
-- Não é só estético — dente perdido causa reabsorção óssea e perda de outros dentes
-- Quanto mais tempo sem o dente, mais complexo fica
-- Indicado para 1 dente ou vários — existe o Protocolo (prótese fixa total)
-- Não dói — feito com anestesia local
-- Valor varia por caso — avaliação gratuita para orçamento completo
-- Parcelamento disponível
+Implante:
+- Substitui raiz do dente com titânio
+- Dente perdido causa reabsorção óssea — quanto mais tempo, mais complexo fica
+- Não dói — anestesia local
+- Valor varia — orçamento na avaliação gratuita. Parcelamento disponível.
 
 Avaliação gratuita:
-- Sem procedimento nenhum — análise e planejamento
-- Dr. Rodrigo ou Dra. Cássia examina com câmera intraoral e mostra como ficaria
-- Paciente sai com planejamento e orçamento em mãos
-- Sem compromisso
+- Sem procedimento — só análise e planejamento
+- Sai com orçamento completo em mãos. Sem compromisso.
 
 FLUXO:
-1. Entenda o interesse — use o que o lead já disse, nunca repita perguntas
-2. Responda dúvidas com propriedade
-3. No máximo 1 pergunta de qualificação:
-   - Lentes: o que quer melhorar — cor, formato ou os dois?
+1. Use o que o lead já disse — nunca repita perguntas já respondidas
+2. Responda dúvidas antes de qualquer coisa
+3. 1 pergunta de qualificação no máximo:
+   - Lentes: cor, formato ou os dois?
    - Implante: quantos dentes e há quanto tempo?
-4. Ofereça os 2 slots disponíveis:
+4. Ofereça os 2 slots:
    "Tenho dois horários disponíveis:
    📅 ${slot1}
    📅 ${slot2}
-   Qual fica melhor pra você?"
-5. Lead confirma → registre o agendamento e encerre com entusiasmo
-6. Lead pede outro horário → ofereça alternativa dentro dos horários da clínica
+   Qual fica melhor?"
+5. Lead confirma → encerre com endereço
+6. Lead pede outro → ofereça próximo disponível
 
-ENCERRAMENTO APÓS CONFIRMAÇÃO:
+ENCERRAMENTO:
 "Perfeito! Agendado para [DIA] às [HORA] com o Dr. Rodrigo ✅
 📍 Praça João Teixeira Mendes, 20 — Parque São Judas Tadeu
-Qualquer dúvida é só me chamar aqui. Até lá! 😊"
+Qualquer dúvida é só me chamar aqui 😊"
 
 OBJEÇÕES:
-"Quanto custa?" — Varia por caso. A avaliação é gratuita e lá o Dr. Rodrigo passa tudo com opções de parcelamento.
-"Precisa desgastar?" — Em 99% dos casos não! É o mito mais comum sobre lentes.
-"Dói?" — Não. A avaliação não tem procedimento nenhum — só análise e conversa.
-"Fica longe" — Muitos vêm de cidades vizinhas. São só 30 minutos de avaliação.
-"Vou pensar" — Claro! Só te aviso que esses horários enchem rápido. Posso reservar um pra você sem compromisso?
-"Implante é caro" — Tem parcelamento e na avaliação o Dr. Rodrigo mostra tudo com calma.
+- Preço: avaliação gratuita, orçamento personalizado, parcelamento disponível
+- Desgaste: 99% dos casos sem desgaste, é mito
+- Dor: avaliação sem procedimento, tratamento com anestesia
+- Distância: 30 min de avaliação, vale a viagem
+- "Vou pensar": "Esses horários enchem rápido — posso reservar sem compromisso?"
+- Implante caro: parcelamento, na avaliação Dr. Rodrigo explica tudo
 
-SOBRE FOTOS:
-"Ótimo, já encaminho para o Dr. Rodrigo analisar antes da sua avaliação 😊"
-NUNCA elogie o sorriso.
+FOTOS: "Ótimo, já mando pro Dr. Rodrigo analisar antes da avaliação 😊" — NUNCA elogie o sorriso.
 
 REGRAS:
 - NUNCA peça WhatsApp — você já tem
-- NUNCA invente horários fora do padrão
 - NUNCA pergunte "está com dor?" para lead de estética
-- Emergência: "Ligue direto: (35) 3660-2090"
-- Mensagens curtas — máximo 3 linhas, uma ideia por vez
+- NUNCA invente horários fora do padrão
+- Emergência: "Ligue: (35) 3660-2090"
+- Máximo 3 linhas por mensagem, uma ideia por vez
 
-Quando agendamento confirmado, inclua ao final:
+Agendamento confirmado → inclua ao final:
 [SISTEMA: {"evento":"agendamento_confirmado","nome":"[nome]","servico":"[servico]","whatsapp":"[numero]","data":"[data]","hora":"[hora]","resumo":"[frase curta]","temperatura":"quente"}]`;
 }
 
@@ -166,20 +138,24 @@ function delay(ms) {
 
 function getMensagem(data) {
   if (data?.message?.conversation) return data.message.conversation;
-  if (data?.message?.imageMessage) return "[lead enviou foto — diga que vai encaminhar para o Dr. Rodrigo analisar antes da avaliação. NUNCA elogie o sorriso]";
+  if (data?.message?.imageMessage) return "[lead enviou foto — diga que vai encaminhar para o Dr. Rodrigo analisar. NUNCA elogie o sorriso]";
   if (data?.message?.extendedTextMessage?.text) return data.message.extendedTextMessage.text;
   return null;
 }
 
 async function enviarTyping(numero) {
-  await fetch(
-    `${process.env.EVOLUTION_URL}/chat/sendPresence/${process.env.EVOLUTION_INSTANCE}`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json", apikey: process.env.EVOLUTION_API_KEY },
-      body: JSON.stringify({ number: numero, presence: "composing", delay: 3000 })
-    }
-  );
+  try {
+    await fetch(
+      `${process.env.EVOLUTION_URL}/chat/sendPresence/${process.env.EVOLUTION_INSTANCE}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json", apikey: process.env.EVOLUTION_API_KEY },
+        body: JSON.stringify({ number: numero, presence: "composing", delay: 3000 })
+      }
+    );
+  } catch (e) {
+    console.error("Erro typing:", e.message);
+  }
 }
 
 async function responderClaude(numero, nome, mensagem) {
@@ -206,6 +182,12 @@ async function responderClaude(numero, nome, mensagem) {
   });
 
   const data = await response.json();
+
+  if (!data.content || !data.content[0]) {
+    console.error("Resposta inesperada Claude:", JSON.stringify(data));
+    throw new Error(data.error?.message || "Resposta inválida da API");
+  }
+
   const resposta = data.content[0].text;
 
   historico.push({ role: "assistant", content: resposta });
@@ -231,7 +213,7 @@ async function enviarMensagem(numero, texto) {
 
 async function notificarFelipe(evento) {
   const isAgendamento = evento.evento === "agendamento_confirmado";
-  const emoji = isAgendamento ? "🔥" : evento.temperatura === "morno" ? "🟡" : "❄️";
+  const emoji = isAgendamento ? "🔥" : "🟡";
   const titulo = isAgendamento ? "AGENDAMENTO CONFIRMADO" : "NOVO LEAD";
 
   let texto = `${emoji} *${titulo} — São Judas Odonto*\n\n` +
@@ -239,12 +221,8 @@ async function notificarFelipe(evento) {
     `🎯 *Interesse:* ${evento.servico}\n` +
     `📱 *WhatsApp:* ${evento.whatsapp}\n`;
 
-  if (isAgendamento) {
-    texto += `📅 *Data:* ${evento.data} às ${evento.hora}\n`;
-  }
-
-  texto += `💬 *Resumo:* ${evento.resumo}\n` +
-    `🌡️ *Temperatura:* ${evento.temperatura}`;
+  if (isAgendamento) texto += `📅 *Data:* ${evento.data} às ${evento.hora}\n`;
+  texto += `💬 *Resumo:* ${evento.resumo}`;
 
   await enviarMensagem(process.env.FELIPE_NUMBER, texto);
 }
@@ -280,7 +258,14 @@ app.post("/webhook", async (req, res) => {
 
     await enviarMensagem(numero, resposta);
   } catch (err) {
-    console.error(err);
+    console.error("Erro webhook:", err.message);
+    // Não deixa o lead sem resposta
+    try {
+      const numero = req.body?.data?.key?.remoteJid?.replace("@s.whatsapp.net", "");
+      if (numero) {
+        await enviarMensagem(numero, "Desculpa, tive um problema aqui. Pode repetir? 😊");
+      }
+    } catch {}
   }
 });
 
