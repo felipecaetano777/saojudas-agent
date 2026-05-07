@@ -27,28 +27,31 @@ FLUXO:
 3. Faça no máximo 2 perguntas contextuais:
    - Lentes: o que quer melhorar (cor, formato ou os dois)? Tem referência de sorriso?
    - Implante: quantos dentes? Faz quanto tempo?
-4. Peça foto de referência para lentes/implante
+4. Quando o lead mandar foto, elogie naturalmente e use como gancho para o agendamento
 5. Ofereça SEMPRE 2 horários prontos — nunca pergunte "qual dia fica bom?"
 6. Contorne objeções de preço (não passe valores, redirecione para avaliação gratuita), distância, medo
 7. Ao confirmar agendamento, envie endereço completo
 
-REGRAS IMPORTANTES:
+REGRAS:
 - NUNCA pergunte "está com dor?" para leads de estética
 - NUNCA passe tabela de preços
 - Se emergência/dor aguda: oriente ligar para (35) 3660-2090
 
-Quando o lead confirmar horário, inclua ao final (invisível para o lead):
+Quando confirmar horário, inclua ao final:
 [SISTEMA: {"evento":"agendamento_confirmado","nome":"[nome]","servico":"[servico]","data":"[data]","hora":"[hora]"}]`;
 
 const conversas = new Map();
 
+function getMensagem(data) {
+  if (data?.message?.conversation) return { texto: data.message.conversation, temFoto: false };
+  if (data?.message?.imageMessage) return { texto: "[lead enviou uma foto de referência de sorriso]", temFoto: true };
+  if (data?.message?.extendedTextMessage?.text) return { texto: data.message.extendedTextMessage.text, temFoto: false };
+  return null;
+}
+
 async function responderClaude(numero, nome, mensagem) {
   const historico = conversas.get(numero) || [];
-  
-  historico.push({
-    role: "user",
-    content: `Nome: ${nome || "Lead"}\nMensagem: ${mensagem}`
-  });
+  historico.push({ role: "user", content: `Nome: ${nome || "Lead"}\nMensagem: ${mensagem}` });
 
   const response = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
@@ -83,10 +86,7 @@ async function enviarMensagem(numero, texto) {
     `${process.env.EVOLUTION_URL}/message/sendText/${process.env.EVOLUTION_INSTANCE}`,
     {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        apikey: process.env.EVOLUTION_API_KEY
-      },
+      headers: { "Content-Type": "application/json", apikey: process.env.EVOLUTION_API_KEY },
       body: JSON.stringify({ number: numero, text: textoLimpo })
     }
   );
@@ -102,14 +102,15 @@ app.post("/webhook", async (req, res) => {
 
   try {
     const { data } = req.body;
-    if (!data?.message?.conversation) return;
-    if (data.key?.fromMe) return;
+    if (data?.key?.fromMe) return;
+
+    const msg = getMensagem(data);
+    if (!msg) return;
 
     const numero = data.key.remoteJid.replace("@s.whatsapp.net", "");
-    const mensagem = data.message.conversation;
     const nome = data.pushName || null;
 
-    const resposta = await responderClaude(numero, nome, mensagem);
+    const resposta = await responderClaude(numero, nome, msg.texto);
 
     const match = resposta.match(/\[SISTEMA:\s*(\{.*?\})\]/s);
     if (match) {
@@ -123,5 +124,4 @@ app.post("/webhook", async (req, res) => {
 });
 
 app.get("/", (_, res) => res.json({ status: "online" }));
-
 app.listen(process.env.PORT || 3000, () => console.log("Bot rodando"));
